@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 54, 57, 63;
+  --background-end-rgb: 47, 49, 54;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+.discord-font {
+  font-family: 'gg sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-discord-blurple hover:bg-opacity-80 text-white font-medium py-2 px-4 rounded-md transition-all;
+  }
+  
+  .btn-secondary {
+    @apply bg-discord-darkSecondary hover:bg-discord-lighterBg text-white font-medium py-2 px-4 rounded-md transition-all;
+  }
+  
+  .nav-link {
+    @apply text-gray-300 hover:text-white transition-colors;
+  }
+  
+  .card {
+    @apply bg-discord-darkSecondary rounded-lg p-4 shadow-lg;
+  }
+}
