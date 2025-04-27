@@ -13,9 +13,9 @@ export default function PreviewPage() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    // In a real app, this would get the data from a more reliable source
+    
     const botData = JSON.parse(localStorage.getItem('botData') || '{}')
-    // Generate files based on bot configuration
+    
     const generatedFiles = generateBotFiles(botData)
     setFiles(generatedFiles)
   }, [])

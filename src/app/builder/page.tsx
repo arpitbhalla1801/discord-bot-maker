@@ -23,8 +23,7 @@ export default function BuilderPage() {
   const router = useRouter()
 
   const handleGenerateCode = () => {
-    // In a real app, this would process the bot data and generate code
-    // For now, we'll just navigate to the preview page
+    
     localStorage.setItem('botData', JSON.stringify(botData))
     router.push('/preview')
   }

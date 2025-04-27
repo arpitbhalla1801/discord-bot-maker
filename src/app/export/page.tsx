@@ -11,7 +11,7 @@ export default function ExportPage() {
 
   const handleDownload = async () => {
     setDownloading(true)
-    // In a real app, this would get the data from a more reliable source
+    
     const botData = JSON.parse(localStorage.getItem('botData') || '{}')
     
     try {
