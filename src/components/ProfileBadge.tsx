@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { FaDiscord, FaUser } from 'react-icons/fa'
+import { signIn } from '@/lib/auth-client'
 
 interface ProfileBadgeProps {
   isLoggedIn?: boolean
@@ -13,9 +14,16 @@ interface ProfileBadgeProps {
 }
 
 export default function ProfileBadge({ isLoggedIn = false, user }: ProfileBadgeProps) {
+  const handleSignIn = async () => {
+    await signIn.social({
+      provider: "discord",
+      callbackURL: "/dashboard/profile",
+    })
+  }
+
   if (!isLoggedIn) {
     return (
-      <button className="btn-primary flex items-center gap-2">
+      <button onClick={handleSignIn} className="btn-primary flex items-center gap-2">
         <FaDiscord />
         <span className="hidden md:inline">Login with Discord</span>
         <span className="md:hidden">Login</span>

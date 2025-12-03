@@ -6,9 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:migrate": "npx @better-auth/cli@latest migrate"
   },
   "dependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "better-auth": "^1.4.5",
+    "better-sqlite3": "^12.5.0",
     "classnames": "^2.3.2",
     "discord.js": "^14.14.1",
     "jszip": "^3.10.1",
