@@ -1,7 +1,14 @@
 import Link from 'next/link'
 import { FaGithub, FaDiscord } from 'react-icons/fa'
+import ProfileBadge from './ProfileBadge'
 
 export default function Navbar() {
+  // Mock auth state - will be replaced with actual auth later
+  const isLoggedIn = false // Change to true to see logged-in state
+  const user = {
+    name: 'Discord User',
+    avatar: 'https://cdn.discordapp.com/embed/avatars/0.png',
+  }
   return (
     <nav className="bg-discord-darkBg border-b border-gray-700">
       <div className="container mx-auto px-4 py-4">
@@ -43,12 +50,15 @@ export default function Navbar() {
             >
               <FaDiscord className="text-xl" />
             </a>
-            <Link 
-              href="/builder" 
-              className="btn-primary hidden md:block"
-            >
-              Start Building
-            </Link>
+            {!isLoggedIn && (
+              <Link 
+                href="/builder" 
+                className="btn-primary hidden md:block"
+              >
+                Start Building
+              </Link>
+            )}
+            <ProfileBadge isLoggedIn={isLoggedIn} user={user} />
           </div>
         </div>
       </div>
