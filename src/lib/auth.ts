@@ -15,4 +15,23 @@ export const auth = betterAuth({
       scopes: ["identify", "email"],
     },
   },
+  session: {
+    // Session expires after 7 days of inactivity (industry standard)
+    expiresIn: 60 * 60 * 24 * 7, // 7 days in seconds
+    // Update session activity every 24 hours to keep it fresh
+    updateAge: 60 * 60 * 24, // 24 hours in seconds
+    // Cookie settings for security
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 5, // 5 minutes cache
+    },
+  },
+  advanced: {
+    // Use secure cookies in production
+    useSecureCookies: process.env.NODE_ENV === "production",
+    // Cross-site support for better compatibility
+    crossSubDomainCookies: {
+      enabled: false,
+    },
+  },
 })

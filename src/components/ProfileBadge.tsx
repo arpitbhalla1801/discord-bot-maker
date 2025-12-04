@@ -15,10 +15,20 @@ interface ProfileBadgeProps {
 
 export default function ProfileBadge({ isLoggedIn = false, user }: ProfileBadgeProps) {
   const handleSignIn = async () => {
-    await signIn.social({
-      provider: "discord",
-      callbackURL: "/dashboard/profile",
-    })
+    try {
+      const data = await signIn.social({
+        provider: "discord",
+        callbackURL: window.location.pathname === '/' ? '/dashboard/profile' : window.location.pathname,
+        fetchOptions: {
+          onSuccess: () => {
+            // Force a client-side navigation after successful auth
+            window.location.href = window.location.pathname === '/' ? '/dashboard/profile' : window.location.pathname
+          }
+        }
+      })
+    } catch (error) {
+      console.error('Sign in failed:', error)
+    }
   }
 
   if (!isLoggedIn) {

@@ -8,20 +8,28 @@ export default function ProfilePage() {
   const { data: session, isPending } = useSession()
   
   const handleSignIn = async () => {
-    await signIn.social({
-      provider: "discord",
-      callbackURL: "/dashboard/profile",
-    })
+    try {
+      await signIn.social({
+        provider: "discord",
+        callbackURL: "/dashboard/profile",
+      })
+    } catch (error) {
+      console.error('Sign in failed:', error)
+    }
   }
 
   const handleSignOut = async () => {
-    await signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          window.location.href = '/'
+    try {
+      await signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            window.location.href = '/'
+          }
         }
-      }
-    })
+      })
+    } catch (error) {
+      console.error('Sign out failed:', error)
+    }
   }
 
   if (isPending) {
