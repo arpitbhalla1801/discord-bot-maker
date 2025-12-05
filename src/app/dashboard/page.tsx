@@ -178,9 +178,9 @@ export default function DashboardPage() {
                   <FaEdit className="text-sm" />
                   <span>Edit</span>
                 </Link>
-                <Link href={`/preview?project=${project.id}`} className="btn-secondary flex items-center gap-2 px-4 py-2">
+                <Link href={`/sessions?project=${project.id}`} className="btn-secondary flex items-center gap-2 px-4 py-2">
                   <FaPlay className="text-sm" />
-                  <span>Preview</span>
+                  <span>Run</span>
                 </Link>
                 <Link href={`/export?project=${project.id}`} className="btn-secondary flex items-center gap-2 px-4 py-2">
                   <FaDownload className="text-sm" />
