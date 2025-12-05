@@ -71,7 +71,7 @@ export default function DashboardPage() {
       }
 
       const newProject = await response.json()
-      router.push(`/builder?project=${newProject.id}`)
+      router.push(`/builder/${newProject.id}`)
     } catch (err) {
       console.error('Error creating project:', err)
       alert('Failed to create project. Please try again.')
@@ -174,7 +174,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="flex flex-row md:flex-col gap-3 mt-2 md:mt-0">
-                <Link href={`/builder?project=${project.id}`} className="btn-secondary flex items-center gap-2 px-4 py-2">
+                <Link href={`/builder/${project.id}`} className="btn-secondary flex items-center gap-2 px-4 py-2">
                   <FaEdit className="text-sm" />
                   <span>Edit</span>
                 </Link>

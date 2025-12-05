@@ -29,6 +29,7 @@ import NodePalette from './NodePalette'
 interface GraphEditorProps {
   initialGraph?: CommandGraphJson
   onSave?: (graph: CommandGraphJson) => void
+  onChange?: (graph: CommandGraphJson) => void
   readOnly?: boolean
 }
 
@@ -36,7 +37,7 @@ const nodeTypes = {
   default: GraphNode,
 }
 
-export default function GraphEditor({ initialGraph, onSave, readOnly = false }: GraphEditorProps) {
+export default function GraphEditor({ initialGraph, onSave, onChange, readOnly = false }: GraphEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(
     initialGraph?.nodes.map(n => ({
       id: n.id,
@@ -62,6 +63,46 @@ export default function GraphEditor({ initialGraph, onSave, readOnly = false }: 
   const [selectedNodeType, setSelectedNodeType] = useState<NodeType | null>(null)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
 
+  // Build graph helper - defined first as it's used by other callbacks
+  const buildGraph = useCallback((): CommandGraphJson => {
+    return {
+      nodes: nodes.map((n: Node) => {
+        const { nodeType, ...restData } = n.data as any
+        return {
+          id: n.id,
+          type: nodeType as NodeType,
+          position: n.position,
+          data: restData
+        }
+      }) as any,
+      edges: edges.map((e: Edge) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        sourceHandle: e.sourceHandle || undefined,
+        targetHandle: e.targetHandle || undefined,
+        label: e.label as string | undefined
+      })),
+      variables: initialGraph?.variables || {}
+    }
+  }, [nodes, edges, initialGraph?.variables])
+
+  // Notify parent of changes
+  const notifyChange = useCallback(() => {
+    const graph = buildGraph()
+    onChange?.(graph)
+  }, [buildGraph, onChange])
+
+  const handleSave = useCallback(() => {
+    const graph = buildGraph()
+    const validation = validateGraph(graph)
+    setValidationErrors(validation.errors)
+
+    if (validation.valid) {
+      onSave?.(graph)
+    }
+  }, [buildGraph, onSave])
+
   const onConnect = useCallback(
     (params: Connection) => {
       if (readOnly) return
@@ -70,8 +111,9 @@ export default function GraphEditor({ initialGraph, onSave, readOnly = false }: 
         animated: true,
         style: { stroke: '#94a3b8', strokeWidth: 2 }
       }, eds))
+      notifyChange()
     },
-    [setEdges, readOnly]
+    [setEdges, readOnly, notifyChange]
   )
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
@@ -102,44 +144,16 @@ export default function GraphEditor({ initialGraph, onSave, readOnly = false }: 
     ])
 
     setSelectedNodeType(null)
-  }, [selectedNodeType, setNodes, readOnly])
-
-  const handleSave = useCallback(() => {
-    const graph: CommandGraphJson = {
-      nodes: nodes.map((n: Node) => {
-        const { nodeType, ...restData } = n.data as any
-        return {
-          id: n.id,
-          type: nodeType as NodeType,
-          position: n.position,
-          data: restData
-        }
-      }) as any,
-      edges: edges.map((e: Edge) => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        sourceHandle: e.sourceHandle || undefined,
-        targetHandle: e.targetHandle || undefined,
-        label: e.label as string | undefined
-      })),
-      variables: initialGraph?.variables || {}
-    }
-
-    const validation = validateGraph(graph)
-    setValidationErrors(validation.errors)
-
-    if (validation.valid) {
-      onSave?.(graph)
-    }
-  }, [nodes, edges, initialGraph?.variables, onSave])
+    notifyChange()
+  }, [selectedNodeType, setNodes, readOnly, notifyChange])
 
   const handleClear = useCallback(() => {
     if (!readOnly && confirm('Clear all nodes and edges?')) {
       setNodes([])
       setEdges([])
+      notifyChange()
     }
-  }, [setNodes, setEdges, readOnly])
+  }, [setNodes, setEdges, readOnly, notifyChange])
 
   const handleAddStartNode = useCallback(() => {
     if (readOnly) return
@@ -160,7 +174,8 @@ export default function GraphEditor({ initialGraph, onSave, readOnly = false }: 
         data: { ...startNode.data, nodeType: startNode.type }
       }
     ])
-  }, [nodes, setNodes, readOnly])
+    notifyChange()
+  }, [nodes, setNodes, readOnly, notifyChange])
 
   return (
     <div className="flex h-full w-full">
@@ -177,8 +192,14 @@ export default function GraphEditor({ initialGraph, onSave, readOnly = false }: 
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
+          onNodesChange={(changes) => {
+            onNodesChange(changes)
+            if (changes.length > 0 && !readOnly) notifyChange()
+          }}
+          onEdgesChange={(changes) => {
+            onEdgesChange(changes)
+            if (changes.length > 0 && !readOnly) notifyChange()
+          }}
           onConnect={onConnect}
           onNodeClick={onNodeClick}
           onPaneClick={onPaneClick}
@@ -225,6 +246,7 @@ export default function GraphEditor({ initialGraph, onSave, readOnly = false }: 
                   onClick={handleSave}
                   className="btn-primary w-full text-sm"
                   disabled={nodes.length === 0}
+                  data-save-button
                 >
                   Save Graph
                 </button>
