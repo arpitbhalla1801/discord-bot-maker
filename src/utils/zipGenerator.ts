@@ -17,9 +17,12 @@ export async function downloadBotFiles(botData: any) {
       const folderPath = parts.join('/');
       
       // Ensure folder exists
-      let folder = zip;
+      let folder: JSZip = zip;
       parts.forEach(part => {
-        folder = folder.folder(part);
+        const newFolder = folder.folder(part);
+        if (newFolder) {
+          folder = newFolder;
+        }
       });
       
       // Add file to the correct folder
