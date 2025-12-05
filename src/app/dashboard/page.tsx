@@ -1,61 +1,175 @@
-import React from 'react';
+'use client'
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { FaEdit, FaDownload, FaTrash, FaCopy, FaPlay } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
+import { FaEdit, FaDownload, FaTrash, FaCopy, FaPlay, FaPlus } from 'react-icons/fa';
+
+interface BotProject {
+  id: string
+  name: string
+  description: string | null
+  icon: string | null
+  status: string
+  updatedAt: string
+  _count: {
+    commands: number
+  }
+}
 
 export default function DashboardPage() {
-  
-  const mockProjects = [
-    {
-      id: 'bot-1',
-      name: 'Server Helper',
-      description: 'General utility bot with moderation features',
-      lastModified: 'April 26, 2025',
-      commands: 12,
-      events: 5
-    },
-    {
-      id: 'bot-2',
-      name: 'Music Master',
-      description: 'Music player bot with playlist features',
-      lastModified: 'April 24, 2025',
-      commands: 8,
-      events: 3
-    },
-    {
-      id: 'bot-3',
-      name: 'Welcome Greeter',
-      description: 'Welcomes new users with custom messages',
-      lastModified: 'April 20, 2025',
-      commands: 4,
-      events: 2
+  const router = useRouter()
+  const [projects, setProjects] = useState<BotProject[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [creatingProject, setCreatingProject] = useState(false)
+
+  useEffect(() => {
+    fetchProjects()
+  }, [])
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/projects')
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/api/auth/signin')
+          return
+        }
+        throw new Error('Failed to fetch projects')
+      }
+
+      const data = await response.json()
+      setProjects(data)
+      setError(null)
+    } catch (err) {
+      console.error('Error fetching projects:', err)
+      setError('Failed to load projects. Please try again.')
+    } finally {
+      setLoading(false)
     }
-  ];
+  }
+
+  const createNewProject = async () => {
+    try {
+      setCreatingProject(true)
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: 'New Bot Project',
+          description: 'A new Discord bot'
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create project')
+      }
+
+      const newProject = await response.json()
+      router.push(`/builder?project=${newProject.id}`)
+    } catch (err) {
+      console.error('Error creating project:', err)
+      alert('Failed to create project. Please try again.')
+    } finally {
+      setCreatingProject(false)
+    }
+  }
+
+  const deleteProject = async (projectId: string) => {
+    if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete project')
+      }
+
+      // Remove from local state
+      setProjects(projects.filter(p => p.id !== projectId))
+    } catch (err) {
+      console.error('Error deleting project:', err)
+      alert('Failed to delete project. Please try again.')
+    }
+  }
+
+  const duplicateProject = async (projectId: string) => {
+    alert('Duplicate feature coming soon!')
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-discord-blurple mx-auto mb-4"></div>
+            <p className="text-gray-400">Loading your projects...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex justify-between items-center mb-10">
         <h1 className="text-4xl font-bold">My Bot Projects</h1>
-        <Link href="/builder" className="btn-primary px-6 py-3 flex items-center gap-2">
-          <span>New Bot</span>
-        </Link>
+        <button 
+          onClick={createNewProject}
+          disabled={creatingProject}
+          className="btn-primary px-6 py-3 flex items-center gap-2 disabled:opacity-50"
+        >
+          <FaPlus />
+          <span>{creatingProject ? 'Creating...' : 'New Bot'}</span>
+        </button>
       </div>
 
+      {error && (
+        <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded mb-6">
+          {error}
+        </div>
+      )}
+
       <div className="grid gap-6">
-        {mockProjects.map(project => (
+        {projects.map(project => (
           <div key={project.id} className="card p-6">
             <div className="flex flex-col md:flex-row justify-between gap-4">
               <div className="flex-grow">
-                <h2 className="text-2xl font-semibold mb-2">{project.name}</h2>
-                <p className="text-gray-300 mb-3">{project.description}</p>
+                <div className="flex items-center gap-3 mb-2">
+                  <h2 className="text-2xl font-semibold">{project.name}</h2>
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    project.status === 'active' ? 'bg-green-500/20 text-green-400' :
+                    project.status === 'error' ? 'bg-red-500/20 text-red-400' :
+                    'bg-gray-500/20 text-gray-400'
+                  }`}>
+                    {project.status}
+                  </span>
+                </div>
+                <p className="text-gray-300 mb-3">{project.description || 'No description'}</p>
                 <div className="flex flex-wrap gap-3 text-sm">
                   <span className="bg-discord-blurple/30 px-3 py-1 rounded-full">
-                    {project.commands} Commands
-                  </span>
-                  <span className="bg-discord-green/30 px-3 py-1 rounded-full">
-                    {project.events} Events
+                    {project._count.commands} Commands
                   </span>
                   <span className="bg-gray-700 px-3 py-1 rounded-full">
-                    Last modified: {project.lastModified}
+                    Last modified: {formatDate(project.updatedAt)}
                   </span>
                 </div>
               </div>
@@ -75,10 +189,18 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="flex mt-4 justify-end gap-3">
-              <button className="text-gray-400 hover:text-gray-200 p-2">
+              <button 
+                onClick={() => duplicateProject(project.id)}
+                className="text-gray-400 hover:text-gray-200 p-2"
+                title="Duplicate project"
+              >
                 <FaCopy />
               </button>
-              <button className="text-gray-400 hover:text-red-500 p-2">
+              <button 
+                onClick={() => deleteProject(project.id)}
+                className="text-gray-400 hover:text-red-500 p-2"
+                title="Delete project"
+              >
                 <FaTrash />
               </button>
             </div>
@@ -86,13 +208,17 @@ export default function DashboardPage() {
         ))}
       </div>
       
-      {mockProjects.length === 0 && (
+      {projects.length === 0 && !loading && (
         <div className="text-center py-16">
-          <h2 className="text-2xl mb-4">You don't have any bot projects yet</h2>
+          <h2 className="text-2xl mb-4">You don&apos;t have any bot projects yet</h2>
           <p className="text-gray-300 mb-8">Create your first Discord bot to get started!</p>
-          <Link href="/builder" className="btn-primary px-6 py-3">
-            Create New Bot
-          </Link>
+          <button 
+            onClick={createNewProject}
+            disabled={creatingProject}
+            className="btn-primary px-6 py-3 disabled:opacity-50"
+          >
+            {creatingProject ? 'Creating...' : 'Create New Bot'}
+          </button>
         </div>
       )}
 
