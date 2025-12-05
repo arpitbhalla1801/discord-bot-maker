@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import GraphEditor from '@/components/graph/GraphEditor'
+import SimulatorModal from '@/components/graph/SimulatorModal'
 import { CommandGraphJson } from '@/types/graph'
-import { FaArrowLeft, FaSave, FaSpinner } from 'react-icons/fa'
+import { FaArrowLeft, FaSave, FaSpinner, FaPlay } from 'react-icons/fa'
 
 interface Command {
   id: string
@@ -33,6 +34,7 @@ export default function CommandGraphPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true)
   const [graphData, setGraphData] = useState<CommandGraphJson | null>(null)
+  const [simulatorOpen, setSimulatorOpen] = useState(false)
 
   useEffect(() => {
     fetchCommand()
@@ -201,6 +203,16 @@ export default function CommandGraphPage() {
           </label>
 
           <button
+            onClick={() => setSimulatorOpen(true)}
+            disabled={!graphData}
+            className="btn-secondary flex items-center gap-2"
+            title="Test graph in simulator"
+          >
+            <FaPlay className="w-4 h-4" />
+            Test
+          </button>
+
+          <button
             onClick={handleManualSave}
             disabled={saving || !graphData}
             className="btn-primary flex items-center gap-2"
@@ -231,6 +243,16 @@ export default function CommandGraphPage() {
           </span>
         </div>
       </div>
+
+      {/* Simulator Modal */}
+      {graphData && (
+        <SimulatorModal
+          isOpen={simulatorOpen}
+          onClose={() => setSimulatorOpen(false)}
+          graph={graphData}
+          commandName={command.name}
+        />
+      )}
     </div>
   )
 }
