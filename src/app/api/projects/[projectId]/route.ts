@@ -34,12 +34,15 @@ export async function GET(request: NextRequest, { params }: Params) {
             }
           }
         },
-        sessions: {
+        deployments: {
           where: {
-            status: 'RUNNING'
+            isActive: true
+          },
+          include: {
+            guild: true
           },
           orderBy: {
-            startedAt: 'desc'
+            deployedAt: 'desc'
           },
           take: 5
         },
@@ -99,8 +102,6 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (name !== undefined) updateData.name = name.trim()
     if (description !== undefined) updateData.description = description?.trim() || null
     if (icon !== undefined) updateData.icon = icon || null
-    if (discordBotId !== undefined) updateData.discordBotId = discordBotId || null
-    if (botToken !== undefined) updateData.botToken = botToken || null
     if (status !== undefined) updateData.status = status
 
     const project = await prisma.botProject.update({

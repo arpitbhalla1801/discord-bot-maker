@@ -28,6 +28,7 @@ model User {
   botProjects      BotProject[]
   plugins          Plugin[]
   commandTemplates CommandTemplate[]
+  guilds           Guild[]
 
   @@map("user")
 }
@@ -90,18 +91,16 @@ model BotProject {
   id          String   @id @default(cuid())
   name        String
   description String?
-  discordBotId String? // Discord application/bot ID
-  botToken    String?  // Encrypted Discord bot token
   icon        String?  // Bot icon URL
   status      String   @default("inactive") // active, inactive, error
   userId      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   commands       Command[]
-  sessions       BotSession[]
   projectPlugins ProjectPlugin[]
+  deployments    GuildDeployment[]
 
   @@index([userId])
   @@index([status])
@@ -146,24 +145,39 @@ model CommandGraph {
   @@map("command_graph")
 }
 
-model BotSession {
-  id          String    @id @default(cuid())
-  projectId   String
-  status      String    @default("RUNNING") // RUNNING, STOPPED, EXPIRED, FAILED
-  runtimeNode String?   // Which worker/server handled this session
-  lastError   String?   // Error message if status is FAILED
-  startedAt   DateTime  @default(now())
-  expiresAt   DateTime  // When the session should automatically stop
-  stoppedAt   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+// New Guild Management Models
 
+model Guild {
+  id          String   @id // Discord guild ID
+  name        String
+  icon        String?
+  ownerId     String   // Discord user ID of guild owner
+  addedBy     String   // Platform user ID who added the bot
+  deployedAt  DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User              @relation(fields: [addedBy], references: [id], onDelete: Cascade)
+  deployments GuildDeployment[]
+
+  @@index([addedBy])
+  @@map("guild")
+}
+
+model GuildDeployment {
+  id          String   @id @default(cuid())
+  guildId     String   // Discord guild ID
+  projectId   String   // Which project is deployed
+  isActive    Boolean  @default(true)
+  deployedAt  DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  guild   Guild      @relation(fields: [guildId], references: [id], onDelete: Cascade)
   project BotProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
+  @@unique([guildId, projectId])
+  @@index([guildId])
   @@index([projectId])
-  @@index([status])
-  @@index([expiresAt])
-  @@map("bot_session")
+  @@map("guild_deployment")
 }
 
 // B. Feature Tables - Plugins & Community Sharing

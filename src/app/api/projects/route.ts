@@ -36,7 +36,8 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json(projects)
+    console.log('Projects API response:', projects)
+    return NextResponse.json({ projects })
   } catch (error) {
     console.error('Error fetching projects:', error)
     return NextResponse.json(

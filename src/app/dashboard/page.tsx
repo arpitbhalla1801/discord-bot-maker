@@ -42,7 +42,7 @@ export default function DashboardPage() {
       }
 
       const data = await response.json()
-      setProjects(data)
+      setProjects(data.projects || data)
       setError(null)
     } catch (err) {
       console.error('Error fetching projects:', err)

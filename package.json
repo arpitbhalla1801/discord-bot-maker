@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
+    "bot": "bun bot-service.ts",
+    "bot:dev": "bun --watch bot-service.ts",
     "lint": "next lint",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
@@ -28,6 +30,7 @@
     "react-dom": "^18.2.0",
     "react-icons": "^4.12.0",
     "ws": "^8.18.3",
+    "zlib-sync": "^0.1.10",
     "zustand": "^5.0.6"
   },
   "devDependencies": {

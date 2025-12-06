@@ -196,12 +196,12 @@ export default function GraphEditor({ initialGraph, onSave, onChange, readOnly =
       sourceHandle: e.sourceHandle,
       targetHandle: e.targetHandle,
       label: e.label,
-      animated: true,
-      style: { stroke: '#94a3b8', strokeWidth: 2 }
+      animated: true as const,
+      style: { stroke: '#94a3b8' as const, strokeWidth: 2 }
     }))
 
     setNodes(templateNodes)
-    setEdges(templateEdges)
+    setEdges(templateEdges as any)
     setShowTemplates(false)
     notifyChange()
   }, [setNodes, setEdges, notifyChange])
