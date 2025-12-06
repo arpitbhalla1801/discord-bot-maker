@@ -19,6 +19,9 @@ export default function SimulatorModal({ isOpen, onClose, graph, commandName }: 
   const [variables, setVariables] = useState<Map<string, any>>(new Map())
   const [executionPath, setExecutionPath] = useState<string[]>([])
   const [showSettings, setShowSettings] = useState(false)
+  const [currentStepIndex, setCurrentStepIndex] = useState(-1)
+  const [stepByStep, setStepByStep] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
   
   // Mock data settings
   const [mockUser, setMockUser] = useState<MockUser>({
@@ -46,6 +49,8 @@ export default function SimulatorModal({ isOpen, onClose, graph, commandName }: 
       setSteps([])
       setVariables(new Map())
       setExecutionPath([])
+      setCurrentStepIndex(-1)
+      setIsPaused(false)
 
       const simulator = new GraphSimulator(graph, {
         user: mockUser,
@@ -53,12 +58,32 @@ export default function SimulatorModal({ isOpen, onClose, graph, commandName }: 
         channel: mockChannel
       })
 
-      const result = await simulator.simulate()
-      
-      setSteps(result.steps)
-      setOutputs(result.outputs)
-      setVariables(result.context.variables)
-      setExecutionPath(simulator.getExecutionPath())
+      if (stepByStep) {
+        // Step-by-step mode
+        const result = await simulator.simulate()
+        setSteps(result.steps)
+        setOutputs([])
+        setVariables(new Map())
+        setCurrentStepIndex(0)
+        
+        // Show first step
+        if (result.steps.length > 0) {
+          // Replay first step
+          const firstOutputs = result.outputs.slice(0, 1)
+          setOutputs(firstOutputs)
+          const firstVars = new Map(result.context.variables)
+          setVariables(firstVars)
+        }
+      } else {
+        // Full run mode
+        const result = await simulator.simulate()
+        
+        setSteps(result.steps)
+        setOutputs(result.outputs)
+        setVariables(result.context.variables)
+        setExecutionPath(simulator.getExecutionPath())
+        setCurrentStepIndex(result.steps.length - 1)
+      }
     } catch (error: any) {
       const errorOutput: SimulationOutput = {
         id: `error-${Date.now()}`,
@@ -74,11 +99,36 @@ export default function SimulatorModal({ isOpen, onClose, graph, commandName }: 
     }
   }
 
+  const nextStep = () => {
+    if (currentStepIndex < steps.length - 1) {
+      const nextIndex = currentStepIndex + 1
+      setCurrentStepIndex(nextIndex)
+      
+      // Show outputs up to current step
+      // This is a simple approximation - in production you'd track outputs per step
+      const visibleOutputs = outputs.slice(0, nextIndex + 1)
+      setOutputs(visibleOutputs)
+    }
+  }
+
+  const previousStep = () => {
+    if (currentStepIndex > 0) {
+      const prevIndex = currentStepIndex - 1
+      setCurrentStepIndex(prevIndex)
+      
+      // Show outputs up to current step
+      const visibleOutputs = outputs.slice(0, prevIndex + 1)
+      setOutputs(visibleOutputs)
+    }
+  }
+
   const resetSimulation = () => {
     setOutputs([])
     setSteps([])
     setVariables(new Map())
     setExecutionPath([])
+    setCurrentStepIndex(-1)
+    setIsPaused(false)
   }
 
   return (
@@ -95,6 +145,15 @@ export default function SimulatorModal({ isOpen, onClose, graph, commandName }: 
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 text-sm text-gray-400">
+              <input
+                type="checkbox"
+                checked={stepByStep}
+                onChange={(e) => setStepByStep(e.target.checked)}
+                className="rounded"
+              />
+              Step-by-step
+            </label>
             <button
               onClick={() => setShowSettings(!showSettings)}
               className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
@@ -161,28 +220,51 @@ export default function SimulatorModal({ isOpen, onClose, graph, commandName }: 
                   No execution yet.<br />Click Run to start.
                 </p>
               ) : (
-                steps.map((step, index) => (
-                  <div
-                    key={index}
-                    className={`p-3 rounded-lg border text-sm ${
-                      step.status === 'success'
-                        ? 'bg-green-500/10 border-green-500/30'
-                        : step.status === 'error'
-                        ? 'bg-red-500/10 border-red-500/30'
-                        : 'bg-gray-700/30 border-gray-600'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-mono text-gray-400">#{index + 1}</span>
-                      <FaChevronRight className="w-3 h-3 text-gray-600" />
-                      <span className="font-semibold text-xs">{step.nodeName}</span>
+                steps.map((step, index) => {
+                  const isCurrentStep = index === currentStepIndex
+                  const isPastStep = index < currentStepIndex
+                  const isFutureStep = index > currentStepIndex
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`p-3 rounded-lg border text-sm transition-all ${
+                        isCurrentStep
+                          ? 'bg-blue-500/20 border-blue-500 shadow-lg shadow-blue-500/20'
+                          : isPastStep
+                          ? step.status === 'success'
+                            ? 'bg-green-500/10 border-green-500/30'
+                            : 'bg-red-500/10 border-red-500/30'
+                          : isFutureStep && stepByStep
+                          ? 'bg-gray-800/30 border-gray-700 opacity-40'
+                          : step.status === 'success'
+                          ? 'bg-green-500/10 border-green-500/30'
+                          : step.status === 'error'
+                          ? 'bg-red-500/10 border-red-500/30'
+                          : 'bg-gray-700/30 border-gray-600'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-xs font-mono ${isCurrentStep ? 'text-blue-400 font-bold' : 'text-gray-400'}`}>
+                          #{index + 1}
+                        </span>
+                        <FaChevronRight className={`w-3 h-3 ${isCurrentStep ? 'text-blue-400' : 'text-gray-600'}`} />
+                        <span className={`font-semibold text-xs ${isCurrentStep ? 'text-blue-300' : ''}`}>
+                          {step.nodeName}
+                        </span>
+                        {isCurrentStep && (
+                          <span className="ml-auto text-xs bg-blue-500 text-white px-2 py-0.5 rounded">
+                            CURRENT
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400">{step.action}</p>
+                      {step.error && (
+                        <p className="text-xs text-red-400 mt-1">{step.error}</p>
+                      )}
                     </div>
-                    <p className="text-xs text-gray-400">{step.action}</p>
-                    {step.error && (
-                      <p className="text-xs text-red-400 mt-1">{step.error}</p>
-                    )}
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
           </div>
@@ -294,11 +376,36 @@ export default function SimulatorModal({ isOpen, onClose, graph, commandName }: 
         {/* Footer Actions */}
         <div className="border-t border-gray-700 p-4 flex justify-between items-center">
           <div className="text-sm text-gray-400">
-            {executionPath.length > 0 && (
+            {stepByStep && currentStepIndex >= 0 && (
+              <span>
+                Step {currentStepIndex + 1} of {steps.length}
+              </span>
+            )}
+            {!stepByStep && executionPath.length > 0 && (
               <span>{executionPath.length} nodes executed</span>
             )}
           </div>
           <div className="flex gap-3">
+            {/* Step-by-step controls */}
+            {stepByStep && currentStepIndex >= 0 && (
+              <>
+                <button
+                  onClick={previousStep}
+                  disabled={currentStepIndex === 0}
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors font-medium disabled:opacity-50"
+                >
+                  ← Previous
+                </button>
+                <button
+                  onClick={nextStep}
+                  disabled={currentStepIndex >= steps.length - 1}
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors font-medium disabled:opacity-50"
+                >
+                  Next →
+                </button>
+              </>
+            )}
+            
             <button
               onClick={resetSimulation}
               disabled={simulating || outputs.length === 0}
@@ -320,7 +427,7 @@ export default function SimulatorModal({ isOpen, onClose, graph, commandName }: 
               ) : (
                 <>
                   <FaPlay className="w-4 h-4" />
-                  Run Simulation
+                  {stepByStep ? 'Start Step-by-Step' : 'Run Simulation'}
                 </>
               )}
             </button>

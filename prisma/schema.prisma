@@ -116,6 +116,8 @@ model Command {
   type          String   @default("SLASH") // SLASH, MESSAGE, BUTTON, MODAL
   discordCmdId  String?  // Discord command ID for slash command registration
   isEnabled     Boolean  @default(true)
+  options       Json?    // Slash command options/arguments configuration
+  permissions   Json?    // Required permissions and restrictions
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

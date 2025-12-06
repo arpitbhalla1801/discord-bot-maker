@@ -11,10 +11,26 @@ interface CommandModalProps {
   mode: 'create' | 'edit'
 }
 
+export interface SlashCommandOption {
+  name: string
+  description: string
+  type: 'STRING' | 'INTEGER' | 'BOOLEAN' | 'USER' | 'CHANNEL' | 'ROLE'
+  required: boolean
+}
+
+export interface CommandPermissions {
+  requiredPermissions: string[]
+  allowedRoles: string[]
+  allowedChannels: string[]
+  cooldownSeconds: number
+}
+
 export interface CommandFormData {
   name: string
   description: string
   type: 'SLASH' | 'MESSAGE' | 'BUTTON' | 'MODAL'
+  options?: SlashCommandOption[]
+  permissions?: CommandPermissions
 }
 
 export default function CommandModal({ isOpen, onClose, onSave, initialData, mode }: CommandModalProps) {
@@ -22,11 +38,19 @@ export default function CommandModal({ isOpen, onClose, onSave, initialData, mod
     initialData || {
       name: '',
       description: '',
-      type: 'SLASH'
+      type: 'SLASH',
+      options: [],
+      permissions: {
+        requiredPermissions: [],
+        allowedRoles: [],
+        allowedChannels: [],
+        cooldownSeconds: 0
+      }
     }
   )
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   if (!isOpen) return null
 
@@ -69,8 +93,20 @@ export default function CommandModal({ isOpen, onClose, onSave, initialData, mod
 
   const handleClose = () => {
     if (!saving) {
-      setFormData(initialData || { name: '', description: '', type: 'SLASH' })
+      setFormData(initialData || {
+        name: '',
+        description: '',
+        type: 'SLASH',
+        options: [],
+        permissions: {
+          requiredPermissions: [],
+          allowedRoles: [],
+          allowedChannels: [],
+          cooldownSeconds: 0
+        }
+      })
       setErrors({})
+      setShowAdvanced(false)
       onClose()
     }
   }
@@ -185,6 +221,123 @@ export default function CommandModal({ isOpen, onClose, onSave, initialData, mod
               {formData.type === 'MODAL' && 'Handle modal form submissions'}
             </p>
           </div>
+
+          {/* Advanced Configuration Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="w-full text-left text-sm text-discord-blurple hover:underline"
+          >
+            {showAdvanced ? '▼' : '▶'} Advanced Configuration (Options & Permissions)
+          </button>
+
+          {/* Advanced Configuration */}
+          {showAdvanced && (
+            <div className="space-y-4 p-4 bg-discord-darkSecondary/50 rounded-lg border border-gray-700">
+              {/* Slash Command Options */}
+              {formData.type === 'SLASH' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Slash Command Options
+                  </label>
+                  <div className="space-y-2">
+                    {formData.options?.map((option, index) => (
+                      <div key={index} className="flex gap-2 items-center bg-gray-800 p-2 rounded">
+                        <input
+                          type="text"
+                          value={option.name}
+                          onChange={(e) => {
+                            const newOptions = [...(formData.options || [])]
+                            newOptions[index].name = e.target.value
+                            setFormData({ ...formData, options: newOptions })
+                          }}
+                          placeholder="option_name"
+                          className="flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white"
+                        />
+                        <select
+                          value={option.type}
+                          onChange={(e) => {
+                            const newOptions = [...(formData.options || [])]
+                            newOptions[index].type = e.target.value as any
+                            setFormData({ ...formData, options: newOptions })
+                          }}
+                          className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white"
+                        >
+                          <option value="STRING">String</option>
+                          <option value="INTEGER">Integer</option>
+                          <option value="BOOLEAN">Boolean</option>
+                          <option value="USER">User</option>
+                          <option value="CHANNEL">Channel</option>
+                          <option value="ROLE">Role</option>
+                        </select>
+                        <label className="flex items-center text-xs">
+                          <input
+                            type="checkbox"
+                            checked={option.required}
+                            onChange={(e) => {
+                              const newOptions = [...(formData.options || [])]
+                              newOptions[index].required = e.target.checked
+                              setFormData({ ...formData, options: newOptions })
+                            }}
+                            className="mr-1"
+                          />
+                          Required
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newOptions = formData.options?.filter((_, i) => i !== index)
+                            setFormData({ ...formData, options: newOptions })
+                          }}
+                          className="text-red-400 hover:text-red-300 text-xs"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({
+                          ...formData,
+                          options: [
+                            ...(formData.options || []),
+                            { name: '', description: 'Option description', type: 'STRING', required: false }
+                          ]
+                        })
+                      }}
+                      className="text-xs text-discord-blurple hover:underline"
+                    >
+                      + Add Option
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Permissions */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Cooldown (seconds)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.permissions?.cooldownSeconds || 0}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      permissions: {
+                        ...formData.permissions!,
+                        cooldownSeconds: parseInt(e.target.value) || 0
+                      }
+                    })
+                  }}
+                  className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm text-white"
+                />
+                <p className="text-xs text-gray-500 mt-1">Prevent spam by adding a cooldown between uses</p>
+              </div>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-3 pt-4">

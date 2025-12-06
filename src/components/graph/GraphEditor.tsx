@@ -23,8 +23,10 @@ import {
   createNode,
   validateGraph 
 } from '@/types/graph'
+import { GRAPH_TEMPLATES } from '@/lib/graphTemplates'
 import GraphNode from './GraphNode'
 import NodePalette from './NodePalette'
+import { FaFileImport } from 'react-icons/fa'
 
 interface GraphEditorProps {
   initialGraph?: CommandGraphJson
@@ -177,6 +179,33 @@ export default function GraphEditor({ initialGraph, onSave, onChange, readOnly =
     notifyChange()
   }, [nodes, setNodes, readOnly, notifyChange])
 
+  const [showTemplates, setShowTemplates] = useState(false)
+
+  const loadTemplate = useCallback((templateGraph: CommandGraphJson) => {
+    const templateNodes = templateGraph.nodes.map(n => ({
+      id: n.id,
+      type: 'default' as const,
+      position: n.position,
+      data: { ...n.data, nodeType: n.type }
+    }))
+
+    const templateEdges = templateGraph.edges.map(e => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      sourceHandle: e.sourceHandle,
+      targetHandle: e.targetHandle,
+      label: e.label,
+      animated: true,
+      style: { stroke: '#94a3b8', strokeWidth: 2 }
+    }))
+
+    setNodes(templateNodes)
+    setEdges(templateEdges)
+    setShowTemplates(false)
+    notifyChange()
+  }, [setNodes, setEdges, notifyChange])
+
   return (
     <div className="flex h-full w-full">
       {/* Node Palette */}
@@ -234,12 +263,22 @@ export default function GraphEditor({ initialGraph, onSave, onChange, readOnly =
               
               <div className="bg-gray-800 border border-gray-700 rounded p-2 space-y-2">
                 {nodes.length === 0 && (
-                  <button
-                    onClick={handleAddStartNode}
-                    className="btn-primary w-full text-sm"
-                  >
-                    Add START Node
-                  </button>
+                  <>
+                    <button
+                      onClick={handleAddStartNode}
+                      className="btn-primary w-full text-sm"
+                    >
+                      Add START Node
+                    </button>
+                    
+                    <button
+                      onClick={() => setShowTemplates(!showTemplates)}
+                      className="btn-secondary w-full text-sm flex items-center justify-center gap-2"
+                    >
+                      <FaFileImport />
+                      Load Template
+                    </button>
+                  </>
                 )}
                 
                 <button
@@ -268,6 +307,54 @@ export default function GraphEditor({ initialGraph, onSave, onChange, readOnly =
             </Panel>
           )}
         </ReactFlow>
+
+        {/* Template Picker Modal */}
+        {showTemplates && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold">Load Template</h3>
+                <button
+                  onClick={() => setShowTemplates(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <p className="text-sm text-gray-400 mb-4">
+                Choose a template to get started quickly. This will replace your current graph.
+              </p>
+
+              <div className="grid grid-cols-2 gap-3">
+                {GRAPH_TEMPLATES.map(template => (
+                  <button
+                    key={template.id}
+                    onClick={() => {
+                      if (confirm(`Load "${template.name}" template? This will replace your current graph.`)) {
+                        loadTemplate(template.graph)
+                      }
+                    }}
+                    className="bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-lg p-4 text-left transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-3xl">{template.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm mb-1">{template.name}</h4>
+                        <p className="text-xs text-gray-400 line-clamp-2">{template.description}</p>
+                        <div className="mt-2">
+                          <span className="text-xs bg-gray-800 px-2 py-1 rounded">
+                            {template.graph.nodes.length} nodes
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
