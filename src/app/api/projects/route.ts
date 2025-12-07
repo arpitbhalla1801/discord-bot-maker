@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
         description: description?.trim() || null,
         icon: icon || null,
         userId: session.user.id,
-        status: 'inactive'
+        status: 'active'
       }
     })
 

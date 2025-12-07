@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FaEdit, FaDownload, FaTrash, FaCopy, FaPlay, FaPlus, FaRocket } from 'react-icons/fa';
+import { FaEdit, FaDownload, FaTrash, FaPlus, FaRocket } from 'react-icons/fa';
 
 interface BotProject {
   id: string
@@ -157,7 +157,6 @@ export default function DashboardPage() {
                   <h2 className="text-2xl font-semibold">{project.name}</h2>
                   <span className={`text-xs px-2 py-1 rounded ${
                     project.status === 'active' ? 'bg-green-500/20 text-green-400' :
-                    project.status === 'error' ? 'bg-red-500/20 text-red-400' :
                     'bg-gray-500/20 text-gray-400'
                   }`}>
                     {project.status}
@@ -182,10 +181,6 @@ export default function DashboardPage() {
                   <FaRocket className="text-sm" />
                   <span>Deploy</span>
                 </Link>
-                <Link href={`/sessions?project=${project.id}`} className="btn-secondary flex items-center gap-2 px-4 py-2">
-                  <FaPlay className="text-sm" />
-                  <span>Run</span>
-                </Link>
                 <Link href={`/export?project=${project.id}`} className="btn-secondary flex items-center gap-2 px-4 py-2">
                   <FaDownload className="text-sm" />
                   <span>Export</span>
@@ -193,13 +188,6 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="flex mt-4 justify-end gap-3">
-              <button 
-                onClick={() => duplicateProject(project.id)}
-                className="text-gray-400 hover:text-gray-200 p-2"
-                title="Duplicate project"
-              >
-                <FaCopy />
-              </button>
               <button 
                 onClick={() => deleteProject(project.id)}
                 className="text-gray-400 hover:text-red-500 p-2"

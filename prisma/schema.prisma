@@ -92,7 +92,7 @@ model BotProject {
   name        String
   description String?
   icon        String?  // Bot icon URL
-  status      String   @default("inactive") // active, inactive, error
+  status      String   @default("active") // active, archived
   userId      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
