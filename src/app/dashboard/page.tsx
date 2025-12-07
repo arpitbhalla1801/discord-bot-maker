@@ -117,11 +117,14 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="flex justify-center items-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-discord-blurple mx-auto mb-4"></div>
-            <p className="text-gray-400">Loading your projects...</p>
+      <div className="container mx-auto px-4 lg:px-6 py-12">
+        <div className="flex justify-center items-center h-96">
+          <div className="text-center animate-fade-in">
+            <div className="relative w-16 h-16 mx-auto mb-6">
+              <div className="absolute inset-0 rounded-full border-4 border-discord-blurple/20"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-discord-blurple border-t-transparent animate-spin"></div>
+            </div>
+            <p className="text-discord-text-secondary text-lg">Loading your projects...</p>
           </div>
         </div>
       </div>
@@ -129,13 +132,16 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="flex justify-between items-center mb-10">
-        <h1 className="text-4xl font-bold">My Bot Projects</h1>
+    <div className="container mx-auto px-4 lg:px-6 py-8 lg:py-12 animate-fade-in">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
+        <div>
+          <h1 className="text-4xl lg:text-5xl font-bold mb-2">My Bot Projects</h1>
+          <p className="text-discord-text-secondary">Manage and deploy your Discord bots</p>
+        </div>
         <button 
           onClick={createNewProject}
           disabled={creatingProject}
-          className="btn-primary px-6 py-3 flex items-center gap-2 disabled:opacity-50"
+          className="btn-primary px-6 py-3 flex items-center gap-2 disabled:opacity-50 whitespace-nowrap"
         >
           <FaPlus />
           <span>{creatingProject ? 'Creating...' : 'New Bot'}</span>
@@ -143,57 +149,79 @@ export default function DashboardPage() {
       </div>
 
       {error && (
-        <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded mb-6">
-          {error}
+        <div className="bg-discord-red/20 border border-discord-red rounded-xl px-5 py-4 mb-6 animate-slide-up">
+          <p className="text-discord-red font-medium">{error}</p>
         </div>
       )}
 
       <div className="grid gap-6">
-        {projects.map(project => (
-          <div key={project.id} className="card p-6">
-            <div className="flex flex-col md:flex-row justify-between gap-4">
-              <div className="flex-grow">
-                <div className="flex items-center gap-3 mb-2">
-                  <h2 className="text-2xl font-semibold">{project.name}</h2>
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    project.status === 'active' ? 'bg-green-500/20 text-green-400' :
-                    'bg-gray-500/20 text-gray-400'
+        {projects.map((project, index) => (
+          <div 
+            key={project.id} 
+            className="card-flat hover:border-discord-blurple/50 transition-all duration-300 group animate-slide-up"
+            style={{ animationDelay: `${index * 50}ms` }}
+          >
+            <div className="flex flex-col lg:flex-row justify-between gap-6">
+              <div className="flex-grow min-w-0">
+                <div className="flex items-center gap-3 mb-3 flex-wrap">
+                  <h2 className="text-2xl lg:text-3xl font-bold group-hover:text-discord-blurple transition-colors">
+                    {project.name}
+                  </h2>
+                  <span className={`badge ${
+                    project.status === 'active' ? 'badge-success' : 'bg-gray-700/50 text-gray-400'
                   }`}>
                     {project.status}
                   </span>
                 </div>
-                <p className="text-gray-300 mb-3">{project.description || 'No description'}</p>
-                <div className="flex flex-wrap gap-3 text-sm">
-                  <span className="bg-discord-blurple/30 px-3 py-1 rounded-full">
+                <p className="text-discord-text-secondary mb-4 line-clamp-2">
+                  {project.description || 'No description provided'}
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <span className="badge-primary">
+                    <FaEdit className="w-3 h-3" />
                     {project._count.commands} Commands
                   </span>
-                  <span className="bg-gray-700 px-3 py-1 rounded-full">
-                    Last modified: {formatDate(project.updatedAt)}
+                  <span className="badge bg-gray-700/50 text-discord-text-secondary border-gray-600/50">
+                    Updated {formatDate(project.updatedAt)}
                   </span>
                 </div>
               </div>
-              <div className="flex flex-row md:flex-col gap-3 mt-2 md:mt-0">
-                <Link href={`/builder/${project.id}`} className="btn-secondary flex items-center gap-2 px-4 py-2">
-                  <FaEdit className="text-sm" />
+              
+              <div className="flex flex-col gap-3 lg:min-w-[140px]">
+                <Link 
+                  href={`/builder/${project.id}`} 
+                  className="btn-secondary flex items-center justify-center gap-2 text-sm"
+                >
+                  <FaEdit />
                   <span>Edit</span>
                 </Link>
-                <Link href={`/deploy?project=${project.id}`} className="btn-secondary flex items-center gap-2 px-4 py-2 bg-discord-blurple hover:bg-discord-blurple/80">
-                  <FaRocket className="text-sm" />
+                <Link 
+                  href={`/deploy?project=${project.id}`} 
+                  className="btn-success flex items-center justify-center gap-2 text-sm"
+                >
+                  <FaRocket />
                   <span>Deploy</span>
                 </Link>
-                <Link href={`/export?project=${project.id}`} className="btn-secondary flex items-center gap-2 px-4 py-2">
-                  <FaDownload className="text-sm" />
+                <Link 
+                  href={`/export?project=${project.id}`} 
+                  className="btn-secondary flex items-center justify-center gap-2 text-sm"
+                >
+                  <FaDownload />
                   <span>Export</span>
                 </Link>
               </div>
             </div>
-            <div className="flex mt-4 justify-end gap-3">
+            
+            <div className="flex mt-6 pt-4 border-t border-gray-700/50 justify-between items-center">
+              <div className="text-xs text-discord-text-muted">
+                Project ID: <code className="bg-discord-darkBg px-2 py-1 rounded">{project.id.slice(0, 8)}</code>
+              </div>
               <button 
                 onClick={() => deleteProject(project.id)}
-                className="text-gray-400 hover:text-red-500 p-2"
+                className="text-discord-text-muted hover:text-discord-red p-2 rounded-lg hover:bg-discord-red/10 transition-all"
                 title="Delete project"
               >
-                <FaTrash />
+                <FaTrash className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -201,35 +229,64 @@ export default function DashboardPage() {
       </div>
       
       {projects.length === 0 && !loading && (
-        <div className="text-center py-16">
-          <h2 className="text-2xl mb-4">You don&apos;t have any bot projects yet</h2>
-          <p className="text-gray-300 mb-8">Create your first Discord bot to get started!</p>
-          <button 
-            onClick={createNewProject}
-            disabled={creatingProject}
-            className="btn-primary px-6 py-3 disabled:opacity-50"
-          >
-            {creatingProject ? 'Creating...' : 'Create New Bot'}
-          </button>
+        <div className="text-center py-20 animate-fade-in">
+          <div className="max-w-md mx-auto">
+            <div className="text-6xl mb-6">🤖</div>
+            <h2 className="text-3xl font-bold mb-4">No Projects Yet</h2>
+            <p className="text-discord-text-secondary mb-8 text-lg">
+              Create your first Discord bot to get started on your automation journey!
+            </p>
+            <button 
+              onClick={createNewProject}
+              disabled={creatingProject}
+              className="btn-primary px-8 py-4 text-lg disabled:opacity-50 inline-flex items-center gap-2"
+            >
+              <FaPlus />
+              {creatingProject ? 'Creating...' : 'Create Your First Bot'}
+            </button>
+          </div>
         </div>
       )}
 
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold mb-6">Recently Used Templates</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Link href="/builder?template=moderation-bot" className="card p-6 hover:bg-gray-800 transition">
-            <h3 className="text-xl font-semibold mb-2">Moderation Bot</h3>
-            <p className="text-gray-300">Keep your server clean with moderation commands.</p>
-          </Link>
-          <Link href="/builder?template=music-bot" className="card p-6 hover:bg-gray-800 transition">
-            <h3 className="text-xl font-semibold mb-2">Music Bot</h3>
-            <p className="text-gray-300">Play music in your Discord voice channels.</p>
-          </Link>
-          <Link href="/templates" className="card p-6 hover:bg-gray-800 transition flex items-center justify-center">
-            <span className="text-xl font-semibold text-discord-blurple">Browse All Templates →</span>
-          </Link>
+      {projects.length > 0 && (
+        <div className="mt-16">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-bold mb-2">Quick Start Templates</h2>
+              <p className="text-discord-text-secondary">Get started faster with pre-built templates</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Link href="/builder?template=moderation-bot" className="card group">
+              <div className="text-4xl mb-4">🛡️</div>
+              <h3 className="text-xl font-bold mb-2 group-hover:text-discord-blurple transition-colors">
+                Moderation Bot
+              </h3>
+              <p className="text-discord-text-secondary">
+                Keep your server safe with kick, ban, mute commands and auto-moderation.
+              </p>
+            </Link>
+            <Link href="/builder?template=music-bot" className="card group">
+              <div className="text-4xl mb-4">🎵</div>
+              <h3 className="text-xl font-bold mb-2 group-hover:text-discord-blurple transition-colors">
+                Music Bot
+              </h3>
+              <p className="text-discord-text-secondary">
+                Play music in voice channels with queue management and playback controls.
+              </p>
+            </Link>
+            <Link href="/templates" className="card group bg-gradient-to-br from-discord-blurple/20 to-discord-fuchsia/20 border-discord-blurple/30">
+              <div className="text-4xl mb-4">✨</div>
+              <h3 className="text-xl font-bold mb-2 text-discord-blurple">
+                Browse All Templates →
+              </h3>
+              <p className="text-discord-text-secondary">
+                Explore our full collection of ready-to-use bot templates.
+              </p>
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

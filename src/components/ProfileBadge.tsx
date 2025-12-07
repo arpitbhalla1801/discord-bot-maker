@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { FaDiscord, FaUser } from 'react-icons/fa'
+import { FaDiscord, FaUser, FaSignInAlt } from 'react-icons/fa'
 import { signIn } from '@/lib/auth-client'
 
 interface ProfileBadgeProps {
@@ -33,10 +33,13 @@ export default function ProfileBadge({ isLoggedIn = false, user }: ProfileBadgeP
 
   if (!isLoggedIn) {
     return (
-      <button onClick={handleSignIn} className="btn-primary flex items-center gap-2">
-        <FaDiscord />
-        <span className="hidden md:inline">Login with Discord</span>
-        <span className="md:hidden">Login</span>
+      <button 
+        onClick={handleSignIn} 
+        className="btn-primary flex items-center gap-2 text-sm group"
+      >
+        <FaDiscord className="text-lg group-hover:rotate-12 transition-transform duration-300" />
+        <span className="hidden sm:inline">Login with Discord</span>
+        <span className="sm:hidden">Login</span>
       </button>
     )
   }
@@ -44,9 +47,11 @@ export default function ProfileBadge({ isLoggedIn = false, user }: ProfileBadgeP
   return (
     <Link 
       href="/dashboard/profile" 
-      className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+      className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-discord-darkHover transition-all group"
     >
-      <span className="hidden md:inline text-sm font-medium">{user?.name}</span>
+      <span className="hidden md:inline text-sm font-medium text-discord-text-primary group-hover:text-discord-blurple transition-colors">
+        {user?.name}
+      </span>
       <div className="relative">
         {user?.avatar ? (
           <Image
@@ -54,14 +59,14 @@ export default function ProfileBadge({ isLoggedIn = false, user }: ProfileBadgeP
             alt={user.name || 'Profile'}
             width={40}
             height={40}
-            className="rounded-full border-2 border-discord-blurple"
+            className="rounded-full border-2 border-discord-blurple group-hover:border-discord-blurpleHover transition-all ring-2 ring-discord-blurple/0 group-hover:ring-discord-blurple/30"
           />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-discord-blurple flex items-center justify-center border-2 border-discord-blurple">
+          <div className="w-10 h-10 rounded-full bg-discord-blurple group-hover:bg-discord-blurpleHover flex items-center justify-center border-2 border-discord-blurple transition-all">
             <FaUser className="text-white" />
           </div>
         )}
-        <div className="absolute -bottom-1 -right-1 bg-discord-green w-3 h-3 rounded-full border-2 border-discord-darkBg"></div>
+        <div className="absolute -bottom-0.5 -right-0.5 bg-discord-green w-3.5 h-3.5 rounded-full border-2 border-discord-darkBg group-hover:scale-110 transition-transform"></div>
       </div>
     </Link>
   )
