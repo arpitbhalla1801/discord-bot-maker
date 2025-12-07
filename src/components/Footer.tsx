@@ -21,8 +21,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/builder" className="text-gray-400 hover:text-white">
-                  Bot Builder
+                <Link href="/dashboard" className="text-gray-400 hover:text-white">
+                  Dashboard
                 </Link>
               </li>
               <li>
@@ -31,8 +31,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="text-gray-400 hover:text-white">
-                  About
+                <Link href="/docs" className="text-gray-400 hover:text-white">
+                  Docs
                 </Link>
               </li>
             </ul>

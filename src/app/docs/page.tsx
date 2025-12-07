@@ -7,20 +7,20 @@ export default function DocsPage() {
       <h1 className="text-4xl font-bold mb-8">Documentation & Guides</h1>
       
       <div className="grid md:grid-cols-3 gap-8 mb-12">
-        <Link href="/docs/getting-started" className="card p-6 hover:bg-gray-800 transition">
+        <div className="card p-6">
           <h2 className="text-2xl font-semibold mb-3">Getting Started</h2>
           <p className="text-gray-300">Learn the basics of creating your first Discord bot with our platform.</p>
-        </Link>
+        </div>
         
-        <Link href="/docs/commands" className="card p-6 hover:bg-gray-800 transition">
+        <div className="card p-6">
           <h2 className="text-2xl font-semibold mb-3">Building Commands</h2>
           <p className="text-gray-300">Discover how to create powerful slash commands and message commands.</p>
-        </Link>
+        </div>
         
-        <Link href="/docs/events" className="card p-6 hover:bg-gray-800 transition">
+        <div className="card p-6">
           <h2 className="text-2xl font-semibold mb-3">Event Handling</h2>
           <p className="text-gray-300">Learn how to make your bot respond to different Discord events.</p>
-        </Link>
+        </div>
       </div>
       
       <h2 className="text-3xl font-bold mb-6">Frequently Asked Questions</h2>
@@ -55,8 +55,8 @@ export default function DocsPage() {
       
       <div className="text-center">
         <p className="text-xl mb-4">Didn't find what you're looking for?</p>
-        <Link href="/contact" className="btn-secondary px-6 py-2">
-          Contact Support
+        <Link href="/dashboard" className="btn-primary px-6 py-2">
+          Start Building
         </Link>
       </div>
     </div>

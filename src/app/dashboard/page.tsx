@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FaEdit, FaDownload, FaTrash, FaCopy, FaPlay, FaPlus } from 'react-icons/fa';
+import { FaEdit, FaDownload, FaTrash, FaCopy, FaPlay, FaPlus, FaRocket } from 'react-icons/fa';
 
 interface BotProject {
   id: string
@@ -177,6 +177,10 @@ export default function DashboardPage() {
                 <Link href={`/builder/${project.id}`} className="btn-secondary flex items-center gap-2 px-4 py-2">
                   <FaEdit className="text-sm" />
                   <span>Edit</span>
+                </Link>
+                <Link href={`/deploy?project=${project.id}`} className="btn-secondary flex items-center gap-2 px-4 py-2 bg-discord-blurple hover:bg-discord-blurple/80">
+                  <FaRocket className="text-sm" />
+                  <span>Deploy</span>
                 </Link>
                 <Link href={`/sessions?project=${project.id}`} className="btn-secondary flex items-center gap-2 px-4 py-2">
                   <FaPlay className="text-sm" />

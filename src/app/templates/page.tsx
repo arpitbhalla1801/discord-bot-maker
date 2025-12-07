@@ -146,7 +146,7 @@ export default function TemplatesPage() {
       </div>
 
       <div className="mt-12 text-center">
-        <Link href="/builder" className="btn-primary text-lg px-8 py-3">
+        <Link href="/dashboard" className="btn-primary text-lg px-8 py-3">
           Create Custom Bot
         </Link>
       </div>

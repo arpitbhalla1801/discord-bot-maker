@@ -1,80 +1,46 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useBuilderStore, useCommands, useEvents, useMetadata, useUIState } from '../../store/builderStore'
-import BuilderPanel from '../../components/builder/BuilderPanel'
-import CommandBuilder from '../../components/builder/CommandBuilder'
-import EventsBuilder from '../../components/builder/EventsBuilder'
-import MetadataEditor from '../../components/builder/MetadataEditor'
+import Link from 'next/link'
+import { FaArrowRight, FaRobot } from 'react-icons/fa'
 
 export default function BuilderPage() {
   const router = useRouter()
   
-  // Use the store
-  const { setActiveTab, markClean, exportProject } = useBuilderStore()
-  const { activeTab, isDirty } = useUIState()
-  const commands = useCommands()
-  const events = useEvents()
-  const metadata = useMetadata()
-
-  const handleGenerateCode = () => {
-    const botData = exportProject()
-    localStorage.setItem('botData', JSON.stringify(botData))
-    markClean()
-    router.push('/preview')
-  }
+  useEffect(() => {
+    // Redirect to dashboard after a brief moment
+    const timer = setTimeout(() => {
+      router.push('/dashboard')
+    }, 3000)
+    
+    return () => clearTimeout(timer)
+  }, [router])
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Bot Builder</h1>
-        {isDirty && (
-          <div className="flex items-center gap-2 text-yellow-500">
-            <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-            <span className="text-sm">Unsaved changes</span>
+    <div className="container mx-auto px-4 py-12">
+      <div className="max-w-2xl mx-auto text-center">
+        <div className="card p-12">
+          <div className="text-discord-blurple text-6xl mb-6 flex justify-center">
+            <FaRobot />
           </div>
-        )}
-      </div>
-      
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Left sidebar */}
-        <BuilderPanel 
-          activeTab={activeTab}
-          onTabChange={(tab) => setActiveTab(tab as 'commands' | 'events' | 'metadata' | 'settings')}
-        />
-        
-        {/* Main content area */}
-        <div className="flex-grow bg-discord-darkSecondary rounded-lg p-6">
-          {activeTab === 'commands' && (
-            <CommandBuilder />
-          )}
-          
-          {activeTab === 'events' && (
-            <EventsBuilder />
-          )}
-          
-          {activeTab === 'metadata' && (
-            <MetadataEditor />
-          )}
+          <h1 className="text-3xl font-bold mb-4">Welcome to the Builder!</h1>
+          <p className="text-gray-300 mb-8">
+            You'll be redirected to your dashboard where you can create and manage your bot projects.
+          </p>
+          <div className="flex flex-col gap-4">
+            <Link 
+              href="/dashboard" 
+              className="btn-primary flex items-center justify-center gap-2 text-lg py-3"
+            >
+              Go to Dashboard
+              <FaArrowRight />
+            </Link>
+            <p className="text-sm text-gray-400">
+              Redirecting automatically in 3 seconds...
+            </p>
+          </div>
         </div>
-      </div>
-      
-      <div className="mt-8 flex justify-end gap-4">
-        <button 
-          className="btn-secondary"
-          onClick={() => router.push('/')}
-        >
-          Cancel
-        </button>
-        <button 
-          className="btn-primary flex items-center gap-2"
-          onClick={handleGenerateCode}
-        >
-          <span>Generate & Preview Code</span>
-          {commands.length + events.length === 0 && (
-            <span className="text-xs opacity-70">(Add commands or events first)</span>
-          )}
-        </button>
       </div>
     </div>
   )

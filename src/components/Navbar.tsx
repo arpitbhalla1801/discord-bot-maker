@@ -24,14 +24,14 @@ export default function Navbar() {
               <Link href="/" className="nav-link">
                 Home
               </Link>
-              <Link href="/builder" className="nav-link">
-                Builder
+              <Link href="/dashboard" className="nav-link">
+                Dashboard
               </Link>
               <Link href="/templates" className="nav-link">
                 Templates
               </Link>
-              <Link href="/about" className="nav-link">
-                About
+              <Link href="/docs" className="nav-link">
+                Docs
               </Link>
             </div>
           </div>
@@ -55,7 +55,7 @@ export default function Navbar() {
             </a>
             {!isLoggedIn && (
               <Link 
-                href="/builder" 
+                href="/dashboard" 
                 className="btn-primary hidden md:block"
               >
                 Start Building

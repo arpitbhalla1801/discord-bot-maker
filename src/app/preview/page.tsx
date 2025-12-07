@@ -80,9 +80,9 @@ export default function PreviewPage() {
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Code Preview</h1>
         <div className="flex items-center gap-3">
-          <Link href="/builder" className="btn-secondary flex items-center gap-2">
+          <Link href="/dashboard" className="btn-secondary flex items-center gap-2">
             <FaArrowLeft className="w-4 h-4" />
-            Back to Builder
+            Back to Dashboard
           </Link>
           <button 
             onClick={handleDownload}

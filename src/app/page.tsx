@@ -13,7 +13,7 @@ export default function Home() {
           Discord bots using a visual UI — no programming required.
         </p>
         <Link 
-          href="/builder" 
+          href="/dashboard" 
           className="btn-primary text-lg px-8 py-3"
         >
           Start Building
@@ -57,7 +57,7 @@ export default function Home() {
           No coding experience needed. Start building your Discord bot in minutes.
         </p>
         <Link 
-          href="/builder" 
+          href="/dashboard" 
           className="btn-primary text-lg px-8 py-3"
         >
           Get Started
