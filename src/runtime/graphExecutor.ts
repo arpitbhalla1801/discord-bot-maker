@@ -8,6 +8,7 @@ interface ExecutionContext {
   interaction: ChatInputCommandInteraction
   client: Client
   variables: Map<string, any>
+  hasReplied: boolean
 }
 
 interface ExecutionResult {
@@ -25,7 +26,8 @@ export class GraphExecutor {
     this.context = {
       interaction,
       client,
-      variables: new Map()
+      variables: new Map(),
+      hasReplied: false
     }
   }
 
@@ -106,16 +108,21 @@ export class GraphExecutor {
     const data = node.data as any
     const content = this.resolveVariables(data.content || 'No message')
 
-    if (this.context.interaction.replied || this.context.interaction.deferred) {
+    console.log('[GraphExecutor] Send Message - hasReplied:', this.context.hasReplied, 'interaction.replied:', this.context.interaction.replied, 'interaction.deferred:', this.context.interaction.deferred)
+
+    if (this.context.hasReplied) {
+      // Use followUp for subsequent messages
       await this.context.interaction.followUp({
         content,
         ephemeral: data.ephemeral || false
       })
     } else {
+      // First message - use reply
       await this.context.interaction.reply({
         content,
         ephemeral: data.ephemeral || false
       })
+      this.context.hasReplied = true
     }
 
     return { success: true }
@@ -143,7 +150,9 @@ export class GraphExecutor {
       })
     }
 
-    if (this.context.interaction.replied || this.context.interaction.deferred) {
+    console.log('[GraphExecutor] Send Embed - hasReplied:', this.context.hasReplied)
+
+    if (this.context.hasReplied) {
       await this.context.interaction.followUp({
         embeds: [embed],
         ephemeral: data.ephemeral || false
@@ -153,6 +162,7 @@ export class GraphExecutor {
         embeds: [embed],
         ephemeral: data.ephemeral || false
       })
+      this.context.hasReplied = true
     }
 
     return { success: true }

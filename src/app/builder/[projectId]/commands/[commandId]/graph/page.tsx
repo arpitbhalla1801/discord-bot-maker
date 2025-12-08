@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import GraphEditor from '@/components/graph/GraphEditor'
 import SimulatorModal from '@/components/graph/SimulatorModal'
@@ -35,21 +35,11 @@ export default function CommandGraphPage() {
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true)
   const [graphData, setGraphData] = useState<CommandGraphJson | null>(null)
   const [simulatorOpen, setSimulatorOpen] = useState(false)
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     fetchCommand()
   }, [projectId, commandId])
-
-  // Auto-save timer
-  useEffect(() => {
-    if (!autoSaveEnabled || !hasUnsavedChanges || !graphData) return
-
-    const timer = setTimeout(() => {
-      handleSave(graphData)
-    }, 3000) // Auto-save after 3 seconds of inactivity
-
-    return () => clearTimeout(timer)
-  }, [graphData, hasUnsavedChanges, autoSaveEnabled])
 
   const fetchCommand = async () => {
     try {
@@ -75,9 +65,10 @@ export default function CommandGraphPage() {
     }
   }
 
-  const handleSave = async (graph: CommandGraphJson) => {
+  const handleSave = useCallback(async (graph: CommandGraphJson) => {
     try {
       setSaving(true)
+      console.log('[Save] Saving graph to database...', graph)
       const response = await fetch(`/api/projects/${projectId}/commands/${commandId}`, {
         method: 'PATCH',
         headers: {
@@ -111,12 +102,26 @@ export default function CommandGraphPage() {
     } finally {
       setSaving(false)
     }
-  }
+  }, [projectId, commandId])
 
-  const handleGraphChange = (graph: CommandGraphJson) => {
+  const handleGraphChange = useCallback((graph: CommandGraphJson) => {
+    console.log('[GraphChange] Graph changed, setting unsaved changes flag')
     setHasUnsavedChanges(true)
     setGraphData(graph)
-  }
+    
+    // Clear existing timer
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current)
+    }
+    
+    // Set new auto-save timer
+    if (autoSaveEnabled) {
+      autoSaveTimerRef.current = setTimeout(() => {
+        console.log('[Auto-save] Triggering auto-save...')
+        handleSave(graph)
+      }, 3000)
+    }
+  }, [autoSaveEnabled, handleSave])
 
   const handleManualSave = () => {
     if (graphData) {

@@ -243,9 +243,6 @@ export class SharedBotService {
     console.log(`[Bot] Command received: /${commandName} in guild ${guildId} by ${user.tag}`)
 
     try {
-      // Defer reply to prevent timeout
-      await interaction.deferReply()
-
       // Find which project owns this command in this guild
       const guildMap = this.guildCommandMap.get(guildId)
       let projectId = guildMap?.get(commandName)
@@ -271,7 +268,7 @@ export class SharedBotService {
         })
 
         if (!deployment) {
-          await interaction.editReply('This command is not deployed to this server.')
+          await interaction.reply({ content: 'This command is not deployed to this server.', ephemeral: true })
           return
         }
 
@@ -295,7 +292,7 @@ export class SharedBotService {
       })
 
       if (!command || command.commandGraphs.length === 0) {
-        await interaction.editReply('Command configuration not found.')
+        await interaction.reply({ content: 'Command configuration not found.', ephemeral: true })
         return
       }
 
@@ -310,14 +307,7 @@ export class SharedBotService {
       const graph = command.commandGraphs[0]
 
       // Execute in sandbox (will handle graph execution internally)
-      const result = await this.executeSandboxed(graph.graphJson, interaction)
-
-      // Send response
-      if (result.reply) {
-        await interaction.editReply(result.reply)
-      } else {
-        await interaction.editReply('Command executed successfully.')
-      }
+      await this.executeSandboxed(graph.graphJson, interaction)
 
       // Log execution
       console.log(`[Bot] Command /${commandName} executed successfully for ${user.tag}`)
@@ -326,9 +316,17 @@ export class SharedBotService {
       console.error('[Bot] Command execution error:', error)
       
       try {
-        await interaction.editReply({
-          content: '❌ An error occurred while executing this command.',
-        })
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: '❌ An error occurred while executing this command.',
+            ephemeral: true
+          })
+        } else {
+          await interaction.followUp({
+            content: '❌ An error occurred while executing this command.',
+            ephemeral: true
+          })
+        }
       } catch (e) {
         console.error('[Bot] Failed to send error reply:', e)
       }

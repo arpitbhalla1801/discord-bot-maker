@@ -26,6 +26,7 @@ import {
 import { GRAPH_TEMPLATES } from '@/lib/graphTemplates'
 import GraphNode from './GraphNode'
 import NodePalette from './NodePalette'
+import NodeEditor from './NodeEditor'
 import { FaFileImport } from 'react-icons/fa'
 
 interface GraphEditorProps {
@@ -64,6 +65,7 @@ export default function GraphEditor({ initialGraph, onSave, onChange, readOnly =
 
   const [selectedNodeType, setSelectedNodeType] = useState<NodeType | null>(null)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [editingNode, setEditingNode] = useState<{ id: string; type: NodeType; data: any } | null>(null)
 
   // Build graph helper - defined first as it's used by other callbacks
   const buildGraph = useCallback((): CommandGraphJson => {
@@ -122,6 +124,34 @@ export default function GraphEditor({ initialGraph, onSave, onChange, readOnly =
     if (readOnly) return
     console.log('Node clicked:', node)
   }, [readOnly])
+
+  const onNodeDoubleClick = useCallback((event: React.MouseEvent, node: Node) => {
+    if (readOnly) return
+    const nodeData = node.data as any
+    setEditingNode({
+      id: node.id,
+      type: nodeData.nodeType,
+      data: nodeData
+    })
+  }, [readOnly])
+
+  const handleNodeSave = useCallback((nodeId: string, newData: any) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === nodeId) {
+          return {
+            ...node,
+            data: {
+              ...newData,
+              nodeType: node.data.nodeType // Preserve the nodeType
+            }
+          }
+        }
+        return node
+      })
+    )
+    notifyChange()
+  }, [setNodes, notifyChange])
 
   const onPaneClick = useCallback((event: React.MouseEvent) => {
     if (readOnly || !selectedNodeType) return
@@ -231,6 +261,7 @@ export default function GraphEditor({ initialGraph, onSave, onChange, readOnly =
           }}
           onConnect={onConnect}
           onNodeClick={onNodeClick}
+          onNodeDoubleClick={onNodeDoubleClick}
           onPaneClick={onPaneClick}
           nodeTypes={nodeTypes}
           fitView
@@ -354,6 +385,17 @@ export default function GraphEditor({ initialGraph, onSave, onChange, readOnly =
               </div>
             </div>
           </div>
+        )}
+
+        {/* Node Editor Modal */}
+        {editingNode && (
+          <NodeEditor
+            nodeId={editingNode.id}
+            nodeType={editingNode.type}
+            nodeData={editingNode.data}
+            onSave={handleNodeSave}
+            onClose={() => setEditingNode(null)}
+          />
         )}
       </div>
     </div>
