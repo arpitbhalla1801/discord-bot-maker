@@ -53,8 +53,7 @@ export default function DeployPage() {
   useEffect(() => {
     fetchData()
     fetchGuilds()
-    const interval = setInterval(fetchData, 30000) // Refresh every 30s
-    return () => clearInterval(interval)
+    // Removed auto-refresh to prevent rate limiting
   }, [])
 
   async function fetchData() {

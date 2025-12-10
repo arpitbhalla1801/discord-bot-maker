@@ -4,6 +4,10 @@ import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import db from '@/lib/db'
 
+// Simple in-memory cache to prevent rate limiting
+const cache = new Map<string, { data: any; timestamp: number }>()
+const CACHE_DURATION = 60 * 1000 // 1 minute
+
 interface DiscordGuild {
   id: string
   name: string
@@ -29,6 +33,14 @@ export async function GET(request: NextRequest) {
 
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check cache first
+    const cacheKey = `guilds:${session.user.id}`
+    const cached = cache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      console.log('[Discord Guilds API] Returning cached data')
+      return NextResponse.json(cached.data)
     }
 
     // Get the user's Discord account from database
@@ -100,26 +112,36 @@ export async function GET(request: NextRequest) {
 
     console.log('[Discord Guilds API] Manageable guilds count:', manageableGuilds.length)
 
-    // Fetch which guilds the bot is currently in
-    const botId = process.env.DISCORD_BOT_ID
-    if (!botId) {
-      return NextResponse.json({ 
-        error: 'Bot ID not configured' 
-      }, { status: 500 })
-    }
-
-    // Get bot's guilds from our database (from deployments and bot events)
-    const deployments = await db.guildDeployment.findMany({
-      where: {
-        isActive: true
-      },
-      select: {
-        guildId: true
+    // Fetch which guilds the bot is currently in from the bot service
+    let botGuildIds = new Set<string>()
+    try {
+      const { sharedBot } = await import('@/services/SharedBotService')
+      const client = sharedBot.getClient()
+      
+      if (client.isReady()) {
+        // Get bot's guilds from Discord client
+        const botGuilds = client.guilds.cache
+        botGuildIds = new Set(botGuilds.map(g => g.id))
+        console.log('[Discord Guilds API] Bot in guilds count:', botGuildIds.size)
+        console.log('[Discord Guilds API] Bot guild IDs:', Array.from(botGuildIds))
+      } else {
+        console.warn('[Discord Guilds API] Bot client not ready, falling back to database')
+        // Fallback to database if bot not ready
+        const deployments = await db.guildDeployment.findMany({
+          where: { isActive: true },
+          select: { guildId: true }
+        })
+        botGuildIds = new Set(deployments.map(d => d.guildId))
       }
-    })
-
-    const botGuildIds = new Set(deployments.map(d => d.guildId))
-    console.log('[Discord Guilds API] Bot in guilds count:', botGuildIds.size)
+    } catch (error) {
+      console.error('[Discord Guilds API] Error fetching bot guilds:', error)
+      // Fallback to database
+      const deployments = await db.guildDeployment.findMany({
+        where: { isActive: true },
+        select: { guildId: true }
+      })
+      botGuildIds = new Set(deployments.map(d => d.guildId))
+    }
 
     // Combine the data
     const guildsWithStatus: DiscordGuildWithBotStatus[] = manageableGuilds.map(guild => ({
@@ -128,12 +150,20 @@ export async function GET(request: NextRequest) {
       hasManagePermissions: true
     }))
 
-    return NextResponse.json({
+    const responseData = {
       guilds: guildsWithStatus,
       totalGuilds: guilds.length,
       manageableGuilds: manageableGuilds.length,
       botGuilds: botGuildIds.size
+    }
+
+    // Cache the response
+    cache.set(cacheKey, {
+      data: responseData,
+      timestamp: Date.now()
     })
+
+    return NextResponse.json(responseData)
 
   } catch (error) {
     console.error('Error fetching Discord guilds:', error)
