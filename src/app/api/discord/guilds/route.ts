@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
       if (client.isReady()) {
         // Get bot's guilds from Discord client
         const botGuilds = client.guilds.cache
-        botGuildIds = new Set(botGuilds.map(g => g.id))
+        botGuildIds = new Set(Array.from(botGuilds.keys()))
         console.log('[Discord Guilds API] Bot in guilds count:', botGuildIds.size)
         console.log('[Discord Guilds API] Bot guild IDs:', Array.from(botGuildIds))
       } else {
