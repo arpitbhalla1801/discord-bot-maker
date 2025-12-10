@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { FaDiscord, FaRocket, FaServer, FaTrash, FaPlus, FaExternalLinkAlt, FaCheck, FaTimes, FaCrown, FaSync } from 'react-icons/fa'
 import { generateBotInviteUrl } from '@/utils/botInvite'
+import { signOut } from '@/lib/auth-client'
 
 interface Deployment {
   id: string
@@ -47,6 +48,7 @@ export default function DeployPage() {
   const [selectedProject, setSelectedProject] = useState<string>('')
   const [selectedGuild, setSelectedGuild] = useState<string>('')
   const [showDeployForm, setShowDeployForm] = useState(false)
+  const [needsReauth, setNeedsReauth] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -86,16 +88,25 @@ export default function DeployPage() {
     setLoadingGuilds(true)
     try {
       const res = await fetch('/api/discord/guilds')
+      const data = await res.json()
+      
       if (res.ok) {
-        const data = await res.json()
         setGuilds(data.guilds || [])
+        setNeedsReauth(false)
+        console.log('Guilds loaded:', data)
       } else if (res.status === 401) {
         router.push('/api/auth/signin')
+      } else if ((res.status === 403 || res.status === 400) && data.needsReauth) {
+        // Missing guilds scope - need to re-authenticate
+        setNeedsReauth(true)
+        console.error('Missing guilds scope or invalid token:', data)
       } else {
-        console.error('Failed to fetch guilds:', await res.text())
+        console.error('Failed to fetch guilds:', data)
+        alert(`Failed to fetch Discord servers: ${data.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Failed to fetch guilds:', error)
+      alert('Failed to connect to Discord. Please try again.')
     } finally {
       setLoadingGuilds(false)
     }
@@ -183,6 +194,41 @@ export default function DeployPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <div className="max-w-6xl mx-auto">
+        {/* Re-authentication Warning Banner */}
+        {needsReauth && (
+          <div className="mb-8 bg-yellow-500/10 border-2 border-yellow-500 rounded-lg p-6">
+            <div className="flex items-start gap-4">
+              <div className="text-4xl">⚠️</div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-yellow-500 mb-2">
+                  Discord Re-authentication Required
+                </h3>
+                <p className="text-gray-300 mb-4">
+                  To view and manage your Discord servers, you need to sign out and sign in again to grant the necessary permissions.
+                  Go to your profile page, click "Sign Out", then sign in again with Discord.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      window.location.href = '/dashboard/profile'
+                    }}
+                    className="px-6 py-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-semibold flex items-center gap-2 transition-colors"
+                  >
+                    <FaDiscord />
+                    Go to Profile & Re-authenticate
+                  </button>
+                  <button
+                    onClick={() => setNeedsReauth(false)}
+                    className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold transition-colors"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">

@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) {
       headers: await headers()
     })
 
+    console.log('[Discord Guilds API] Session:', session?.user?.id)
+
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -37,13 +39,31 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    console.log('[Discord Guilds API] Account found:', !!discordAccount)
+    console.log('[Discord Guilds API] Access token exists:', !!discordAccount?.accessToken)
+    console.log('[Discord Guilds API] Scopes:', discordAccount?.scope)
+
     if (!discordAccount || !discordAccount.accessToken) {
       return NextResponse.json({ 
-        error: 'Discord account not linked. Please sign in with Discord.' 
+        error: 'Discord account not linked. Please sign in with Discord.',
+        needsReauth: true
       }, { status: 400 })
     }
 
+    // Check if guilds scope is granted (scopes can be space or comma separated)
+    const scopes = discordAccount.scope?.split(/[\s,]+/) || []
+    console.log('[Discord Guilds API] Parsed scopes:', scopes)
+    if (!scopes.includes('guilds')) {
+      console.log('[Discord Guilds API] Missing guilds scope. User needs to re-authenticate.')
+      return NextResponse.json({ 
+        error: 'Missing guilds permission. Please sign out and sign in again to grant server access.',
+        needsReauth: true,
+        currentScopes: scopes
+      }, { status: 403 })
+    }
+
     // Fetch user's guilds from Discord API using their OAuth token
+    console.log('[Discord Guilds API] Fetching guilds from Discord API...')
     const guildsResponse = await fetch('https://discord.com/api/v10/users/@me/guilds', {
       headers: {
         'Authorization': `Bearer ${discordAccount.accessToken}`
@@ -51,13 +71,25 @@ export async function GET(request: NextRequest) {
     })
 
     if (!guildsResponse.ok) {
-      console.error('Discord API error:', await guildsResponse.text())
+      const errorText = await guildsResponse.text()
+      console.error('[Discord Guilds API] Discord API error:', guildsResponse.status, errorText)
+      
+      // If unauthorized, token might be expired
+      if (guildsResponse.status === 401) {
+        return NextResponse.json({ 
+          error: 'Your Discord session has expired. Please sign out and sign in again.',
+          needsReauth: true
+        }, { status: 401 })
+      }
+      
       return NextResponse.json({ 
-        error: 'Failed to fetch Discord servers. Please re-authenticate.' 
+        error: 'Failed to fetch Discord servers. Please try again or re-authenticate.',
+        needsReauth: true
       }, { status: 500 })
     }
 
     const guilds: DiscordGuild[] = await guildsResponse.json()
+    console.log('[Discord Guilds API] Fetched guilds count:', guilds.length)
 
     // Filter guilds where user has MANAGE_GUILD permission (0x20 = 32)
     const MANAGE_GUILD = 0x20
@@ -65,6 +97,8 @@ export async function GET(request: NextRequest) {
       const permissions = BigInt(guild.permissions)
       return guild.owner || (permissions & BigInt(MANAGE_GUILD)) === BigInt(MANAGE_GUILD)
     })
+
+    console.log('[Discord Guilds API] Manageable guilds count:', manageableGuilds.length)
 
     // Fetch which guilds the bot is currently in
     const botId = process.env.DISCORD_BOT_ID
@@ -85,6 +119,7 @@ export async function GET(request: NextRequest) {
     })
 
     const botGuildIds = new Set(deployments.map(d => d.guildId))
+    console.log('[Discord Guilds API] Bot in guilds count:', botGuildIds.size)
 
     // Combine the data
     const guildsWithStatus: DiscordGuildWithBotStatus[] = manageableGuilds.map(guild => ({
